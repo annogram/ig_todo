@@ -4,123 +4,71 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
+
 
 class TasksController extends Controller
 {
+
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
-        $tasks = Task::orderBy('due_date', 'asc')->paginate(5);
-        return view('tasks.index')->with('tasks', $tasks);
+        return response()->json(Auth::user()->tasks);
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        return view('tasks.create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function store(Request $request)
     {
         // Validate The Data
         $this->validate($request, [
             'name' => 'required|string|max:255|min:3',
-            'description' => 'required|string|max:10000|min:10',
-            'due_date' => 'required|date',
+            'description' => 'required|string|max:10000|min:3',
         ]);
-        // Create a New task
-        $task = new Task;
-        // Assign the Task data from our request
-        $task->name = $request->name;
-        $task->description = $request->description;
-        $task->due_date = $request->due_date;
-        // Save the task
-        $task->save();
-        // Flash Session Message with Success
-        Session::flash('success', 'Created Task Successfully');
-        // Return A Redirect
-        return redirect()->route('task.index');
-    }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $task = Task::find($id);
-        $task->dueDateFormatting = false;
-        return view('tasks.edit')->withTask($task);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        // Validate The Data
-        $this->validate($request, [
-            'name' => 'required|string|max:255|min:3',
-            'description' => 'required|string|max:10000|min:10',
-            'due_date' => 'required|date',
+        $task = Auth::user()->tasks()->create([
+            'name' => $request->name,
+            'description' => $request->description
         ]);
-        // Find the related task
-        $task = Task::find($id);
-        // Assign the Task data from our request
-        $task->name = $request->name;
-        $task->description = $request->description;
-        $task->due_date = $request->due_date;
-        // Save the task
-        $task->save();
-        // Flash Session Message with Success
-        Session::flash('success', 'Saved The Task Successfully');
-        // Return A Redirect
-        return redirect()->route('task.index');
+
+        return response()->json($task);
     }
 
     /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @param Task $task
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function doneTask(Task $task)
     {
-        $task = Task::find($id);
+        $task->done_at = now();
+        $task->save();
+        return response()->json($task);
+    }
+
+    /**
+     * @param Task $task
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function undoneTask(Task $task)
+    {
+        $task->done_at = null;
+        $task->save();
+        return response()->json($task);
+    }
+
+    /**
+     * @param Task $task
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Exception
+     */
+    public function destroy(Task $task)
+    {
         $task->delete();
-        Session::flush('success', 'Deleted');
-        return redirect()->route('task.index');
+        return response()->json(['message' => 'task deleted']);
     }
 }

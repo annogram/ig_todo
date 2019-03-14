@@ -11,8 +11,10 @@
 |
 */
 
-Route::resource('task', 'TasksController');
-Route::get('/', function () {
-    return redirect()->route('task.index');
-});
+Route::resource('tasks', 'TasksController');
+Route::post('task/{task}/done',  'TasksController@doneTask');
+Route::post('task/{task}/undone',  'TasksController@undoneTask');
 
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
