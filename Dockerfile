@@ -17,3 +17,6 @@ RUN apt-get update && apt-get install -y \
         apt-get install -y nodejs && \
         npm install -g npm
 RUN curl -sL https://getcomposer.org/installer | php -- --install-dir /usr/bin --filename composer
+RUN composer install
+RUN npm install
+RUN php artisian migrate:fresh
